@@ -2,8 +2,10 @@ import { ChevronDownIcon } from "@heroicons/react/outline";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import { shuffle } from "lodash";
-import { useRecoilState } from "recoil";
-import { playlistIdState } from "../atoms/playlistAtom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { playlistIdState, playlistState } from "../atoms/playlistAtom";
+import useSpotify from "../hooks/useSpotify";
+import Songs from "./Songs";
 
 const colors = [
   "from-indigo-500",
@@ -20,11 +22,32 @@ const colors = [
 function Center() {
   const { data: session } = useSession();
   const [color, setColor] = useState(null);
-  const [playlistId, setPlaylistId] = useRecoilState(playlistIdState);
+  const spotifyApi = useSpotify();
+
+  // useRecoilValue returns the read-only value of the given atom.
+  const playlistId = useRecoilValue(playlistIdState);
+
+  // useRecoilState returns a tuple of the current value and a setter function.
+  const [playlist, setPlaylist] = useRecoilState(playlistState);
 
   useEffect(() => {
     setColor(shuffle(colors).pop());
   }, [playlistId]);
+
+  useEffect(() => {
+    if (spotifyApi.getAccessToken()) {
+      spotifyApi
+        .getPlaylist(playlistId)
+        .then((data) => {
+          setPlaylist(data.body);
+        })
+        .catch((err) => {
+          console.log("Something went wrong", err);
+        });
+    }
+  }, [playlistId, spotifyApi]);
+
+  console.log(playlist);
 
   return (
     <div className="flex-grow">
@@ -40,11 +63,24 @@ function Center() {
         </div>
       </header>
 
-      <section>
-        <div
-          className={`flex items-end space-x-7 bg-gradient-to-b to-black ${color} text-white p-8 h-80`}
-        ></div>
+      <section
+        className={`flex items-end space-x-7 bg-gradient-to-b to-black ${color} text-white h-80 p-8`}
+      >
+        <img
+          className="h-44 w-44 shadow-2xl"
+          src={playlist?.images?.[0]?.url}
+          alt=""
+        />
+
+        <div>
+          <p>PLAYLIST</p>
+          <h2 className="text-2xl md:text-3xl xl:text-5xl">{playlist?.name}</h2>
+        </div>
       </section>
+
+      <div>
+        <Songs />
+      </div>
     </div>
   );
 }

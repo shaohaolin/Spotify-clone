@@ -20,13 +20,16 @@ function Sidebar() {
 
   useEffect(() => {
     if (spotifyApi.getAccessToken()) {
-      spotifyApi.getUserPlaylists().then((data) => {
-        setPlaylists(data.body.items);
-      });
+      spotifyApi
+        .getUserPlaylists()
+        .then((data) => {
+          setPlaylists(data.body.items);
+        })
+        .catch((err) => {
+          console.log("Something went wrong", err);
+        });
     }
   }, [session, spotifyApi]);
-
-  console.log(playlistId);
 
   return (
     <div className="text-gray-500 p-5 text-sm border-r border-x-gray-900 overflow-y-scroll h-screen scrollbar-hide">
